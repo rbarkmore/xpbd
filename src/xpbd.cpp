@@ -87,19 +87,32 @@ public:
 
 class CApplication{
 private:
-  float m_Time;
-  int   m_SolveTime;
+	int m_timeOldSim;
+	int m_timeOldIdle;
+	int m_msPerFrame; // default to 33 milliseconds per frame (1/FPS)
+	int m_msSimStep;  // default to  simulation time step of 10 milliseocnds
+
+	int   m_SolveTime;
 public:
   int   m_IterationNum;
   int   m_Mode;
   int   m_OldMode;
-  CApplication() :
-  m_Time(0.0f), m_SolveTime(0), m_IterationNum(20), m_Mode(eModePBD), m_OldMode(eModeMax){}
 
-  float GetTime(){ return m_Time; }
-  void  SetTime(float time){ m_Time = time; }
+  CApplication() :
+   m_timeOldSim(0), m_timeOldIdle(0), m_msPerFrame(33), m_msSimStep(10),
+   m_SolveTime(0), m_IterationNum(20), m_Mode(eModePBD), m_OldMode(eModeMax){}
+
+   int  GetTimeOldSim(){ return m_timeOldSim; }
+   void SetTimeOldSim(int sim){m_timeOldSim = sim; }
+   int  GetTimeOldIdle(){ return m_timeOldIdle; }
+   void SetTimeOldIdle(int idle){m_timeOldIdle = idle; }
+
+   int   GetmsPerFrame() { return m_msPerFrame; }
+   int   GetmsPerSimStep() { return m_msSimStep; }
+   float GetdtPerSimStep() { return ( (float) m_msSimStep ) / 1000.0f; }
+   
   int   GetSolveTime(){ return m_SolveTime; }
-  void  SetSolveTime(float time){ m_SolveTime = time; }
+  void  SetSolveTime(int time){ m_SolveTime = time; }
 };
 
 class CConstraint{
@@ -306,9 +319,6 @@ void render_string(std::string& str, int w, int h, int x0, int y0) {
 void init(int argc, char* argv[]){
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glEnable(GL_CULL_FACE);
-
-  GLfloat time = (float)glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
-  g_Application.SetTime(time);
 }
 
 void display(void){
@@ -368,19 +378,28 @@ void reshape(int width, int height){
   glLightfv(GL_LIGHT0, GL_DIFFUSE,  lightDiffuse);
   glLightfv(GL_LIGHT0, GL_AMBIENT,  lightAmbient);
   glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
-}
+};
 
 void idle(void){
-  GLfloat time = (float)glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
-  GLfloat dt = time - g_Application.GetTime();
+	int timeNow = glutGet(GLUT_ELAPSED_TIME);  // returns time since program started, in milliseconds
 
-  dt = (dt > 0.033f) ? 0.033f : dt; // keep 30fps
+	int etSim  = timeNow - g_Application.GetTimeOldSim();  // elapsed time spent so far in simulation, use to control simulation to real time
+	int etIdle = timeNow - g_Application.GetTimeOldIdle(); // elapsed time spent so far in idle, use to control when to render
 
-  g_Ball.Update(dt);
-  g_Cloth.Update(g_Application, dt, &g_Ball, g_Application.m_IterationNum);
+	float dtSim = g_Application.GetdtPerSimStep();
 
-  g_Application.SetTime(time);
-  glutPostRedisplay();
+    if(etSim > g_Application.GetmsPerSimStep()){
+		//std::cout << "etSim: " << etSim << "\n";
+		g_Application.SetTimeOldSim(timeNow);
+		g_Ball.Update(dtSim);
+        g_Cloth.Update(g_Application, dtSim, &g_Ball, g_Application.m_IterationNum);
+	}
+
+	if(etIdle > g_Application.GetmsPerFrame() ){
+		//std::cout << "                   etIdle: " << etIdle << "\n";
+		g_Application.SetTimeOldIdle(timeNow);
+        glutPostRedisplay();
+	}
 }
 
 void keyboard(unsigned char key , int x , int y){
