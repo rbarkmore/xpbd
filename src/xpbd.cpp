@@ -5,6 +5,7 @@
 // http://www.polyphony.co.jp/recruit/
 //
 #include <cstdlib>
+#include <iostream>
 
 #if defined(WIN32)
 #include <GL/glut.h>
@@ -66,10 +67,12 @@ public:
   m_Position(position),
   m_OldPosition(position),
   m_Acceleration(acceleration){}
-  CParticle(){};
-  ~CParticle(){}
 
-  void       Update(float t){
+   CParticle() :
+   m_InvMass(1.0f) {}
+  ~CParticle() {}
+
+ void       Update(float t){
     if (m_InvMass > 0.0f){
       glm::vec3 tmp = m_Position;
       m_Position += (m_Position - m_OldPosition) + m_Acceleration * t * t;
@@ -181,7 +184,7 @@ public:
 
   void Render(){
     glTranslatef(m_Position.x, m_Position.y, m_Position.z);
-    static const glm::vec3 color(0.0f, 0.0f, 1.0f);
+    const glm::vec3 color(0.0f, 0.0f, 1.0f);
     glColor3fv((GLfloat*)&color);
     glutSolidSphere(m_Radius, 30, 30);
   }
@@ -209,7 +212,7 @@ private:
 
 public:
   CCloth(float width, float height, int num_width, int num_height):
-  m_Width(num_height),
+  m_Width(num_width),
   m_Height(num_height) {
     m_Particles.resize(m_Width * m_Height);
     for(int w = 0; w < m_Width; w++){
@@ -263,17 +266,17 @@ public:
     glEnd();
   }
 
-  void Update(CApplication& app, float dt, CBall* ball, int iteraion){
+  void Update(CApplication& app, float dt, CBall* ball, int iteration){
     std::vector<CParticle>::iterator particle;
     for(particle = m_Particles.begin(); particle != m_Particles.end(); particle++){
       (*particle).Update(dt); // predict position
     }
-    unsigned int  solve_time_ms = 0;
 	std::vector<CConstraint>::iterator constraint;
     for(constraint = m_Constraints.begin(); constraint != m_Constraints.end(); constraint++){
       (*constraint).LambdaInit();
     }
-    for(int i = 0; i < iteraion; i++){
+    int  solve_time_ms = 0;
+    for(int i = 0; i < iteration; i++){
       for(particle = m_Particles.begin(); particle != m_Particles.end(); particle++){
         glm::vec3 vec    = (*particle).GetPosition() - ball->GetPosition();
         float     length = glm::length(vec);
@@ -282,7 +285,7 @@ public:
           (*particle).AddPosition(glm::normalize(vec) * (radius - length));
         }
       }
-      unsigned int before = glutGet(GLUT_ELAPSED_TIME);
+      int before = glutGet(GLUT_ELAPSED_TIME);
       for(constraint = m_Constraints.begin(); constraint != m_Constraints.end(); constraint++){
         (*constraint).Solve(app, dt);
       }
@@ -305,7 +308,7 @@ void render_string(std::string& str, int w, int h, int x0, int y0) {
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  glRasterPos2f(x0, y0);
+  glRasterPos2f( (GLfloat) x0, (GLfloat) y0);
   int size = (int)str.size();
   for(int i = 0; i < size; ++i){
     glutBitmapCharacter(GLUT_BITMAP_9_BY_15, str[i]);
@@ -340,18 +343,18 @@ void display(void){
 
   glColor3d(1.0f, 1.0f, 1.0f);
   char debug[128];
-  sprintf(debug, "ITERATION %d", g_Application.m_IterationNum);
+  sprintf_s(debug, "ITERATION %d", g_Application.m_IterationNum);
   std::string iteration_text(debug);
   render_string(iteration_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 20);
-  sprintf(debug, "%s", MODE_STRING[g_Application.m_Mode]);
+  sprintf_s(debug, "%s", MODE_STRING[g_Application.m_Mode]);
   std::string mode_text(debug);
   render_string(mode_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 40);
-  sprintf(debug, "TIME %d(ms)", g_Application.GetSolveTime());
+  sprintf_s(debug, "SOLVE TIME %d(ms)", g_Application.GetSolveTime());
   std::string time_text(debug);
   render_string(time_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 60);
 
   glutSwapBuffers();
-}
+};
 
 void reshape(int width, int height){
   static GLfloat lightPosition[4] = {0.0f,  2.5f,  5.5f, 1.0f};
