@@ -5,7 +5,6 @@
 // http://www.polyphony.co.jp/recruit/
 //
 #include <cstdlib>
-#include <iostream>
 
 #if defined(WIN32)
 #include <GL/glut.h>
@@ -383,6 +382,7 @@ void reshape(int width, int height){
   glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
 };
 
+//#include <iostream>
 void idle(void){
 	int timeNow = glutGet(GLUT_ELAPSED_TIME);  // returns time since program started, in milliseconds
 
