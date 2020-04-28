@@ -382,7 +382,14 @@ void reshape(int width, int height){
   glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
 };
 
-//#include <iostream>
+// uncomment this define, if you want to log sim time and idle time to file
+//#define LOG_TO_FILE
+#ifdef LOG_TO_FILE
+#include <iostream>
+#include <fstream>
+std::ofstream outf ( "log.txt" );
+#endif // LOG_TO_FILE
+
 void idle(void){
 	int timeNow = glutGet(GLUT_ELAPSED_TIME);  // returns time since program started, in milliseconds
 
@@ -392,14 +399,18 @@ void idle(void){
 	float dtSim = g_Application.GetdtPerSimStep();
 
     if(etSim > g_Application.GetmsPerSimStep()){
-		//std::cout << "etSim: " << etSim << "\n";
+		#ifdef LOG_TO_FILE
+		outf << "etSim: " << etSim << std::endl;
+		#endif // LOG_TO_FILE
 		g_Application.SetTimeOldSim(timeNow);
 		g_Ball.Update(dtSim);
         g_Cloth.Update(g_Application, dtSim, &g_Ball, g_Application.m_IterationNum);
 	}
 
 	if(etIdle > g_Application.GetmsPerFrame() ){
-		//std::cout << "                   etIdle: " << etIdle << "\n";
+		#ifdef LOG_TO_FILE
+		outf << "                   etIdle: " << etIdle << std::endl;
+		#endif // LOG_TO_FILE
 		g_Application.SetTimeOldIdle(timeNow);
         glutPostRedisplay();
 	}
