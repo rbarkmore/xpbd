@@ -21,6 +21,13 @@
 
 enum eMode {
   eModePBD,
+  eModeXPBD_GrapheneHi,
+  eModeXPBD_GrapheneMid,
+  eModeXPBD_SteelCarbon,
+  eModeXPBD_SteelStainless,
+  eModeXPBD_Kevlar,
+  eModeXPBD_TitaniumAlloy,
+  eModeXPBD_Aluminum,
   eModeXPBD_Concrete,
   eModeXPBD_Wood,
   eModeXPBD_Leather,
@@ -31,8 +38,15 @@ enum eMode {
   eModeMax,
 };
 
-static const char* MODE_STRING[eModeMax] = {
+static const char* modeString[eModeMax] = {
   "PBD",
+  "XPBD(GrapheneHi)",
+  "XPBD(GrapheneMid)",
+  "XPBD(SteelCarbon)",
+  "XPBD(SteelStainless)",
+  "XPBD(Kevlar)",
+  "XPBD(TitaniumAlloy)",
+  "XPBD(Aluminum)",
   "XPBD(Concrete)",
   "XPBD(Wood)",
   "XPBD(Leather)",
@@ -42,15 +56,28 @@ static const char* MODE_STRING[eModeMax] = {
   "XPBD(Fat)",
 };
 
-static const float MODE_COMPLIANCE[eModeMax] = {
-  0.0f,            // Miles Macklin's blog (http://blog.mmacklin.com/2016/10/12/xpbd-slides-and-stiffness/)
-  0.00000000004f, // 0.04 x 10^(-9) (M^2/N) Concrete
-  0.00000000016f, // 0.16 x 10^(-9) (M^2/N) Wood
-  0.000000001f,   // 1.0  x 10^(-8) (M^2/N) Leather
-  0.000000002f,   // 0.2  x 10^(-7) (M^2/N) Tendon
-  0.0000001f,     // 1.0  x 10^(-6) (M^2/N) Rubber
-  0.00002f,       // 0.2  x 10^(-3) (M^2/N) Muscle
-  0.0001f,        // 1.0  x 10^(-3) (M^2/N) Fat
+// Miles Macklin's blog (http://blog.mmacklin.com/2016/10/12/xpbd-slides-and-stiffness/)
+
+// Compliance is the inverse of Young's Modulus.
+// The units for Young's Modulus are N/M^2, so the units for Compliance are M^2/N
+// For example, steel has a Young's Modulus of 200 gigapascals (GPa), or 200 x 10^(9) N/M^2
+
+static const float modeCompliance[eModeMax] = {
+  0.0f,                         //  space saved for PBD
+  (float) (1.0f / 1.10E+012 ),  //	Graphene Hi
+  (float) (1.0f / 3.42E+011 ),  //	GrapheneMid
+  (float) (1.0f / 2.00E+011 ),  //	SteelCarbon
+  (float) (1.0f / 1.80E+011 ),  //	SteelStainless
+  (float) (1.0f / 1.12E+011 ),  //	Kevlar
+  (float) (1.0f / 1.10E+011 ),  //	TitaniumAlloy
+  (float) (1.0f / 7.00E+010 ),  //	Aluminum
+  (float) (1.0f / 2.50E+010 ),  //	Concrete
+  (float) (1.0f / 6.00E+009 ),  //	Wood
+  (float) (1.0f / 1.00E+008 ),  //	Leather
+  (float) (1.0f / 5.00E+007 ),  //	Tendon
+  (float) (1.0f / 1.00E+006 ),  //	Rubber
+  (float) (1.0f / 5.00E+003 ),  //	Muscle
+  (float) (1.0f / 1.00E+003 )   //	Fat
 };
 
 class CParticle{
@@ -150,7 +177,7 @@ public:
     GLfloat   constraint        = distance - m_RestLength; // Cj(x)
     glm::vec3 correction_vector;
     if (app.m_Mode != eModePBD) { // XPBD
-      m_Compliance = MODE_COMPLIANCE[app.m_Mode];
+      m_Compliance = modeCompliance[app.m_Mode];
       m_Compliance /= dt * dt;    // a~
       GLfloat dlambda           = (-constraint - m_Compliance * m_Lambda) / (sum_mass + m_Compliance); // eq.18
               correction_vector = dlambda * p1_minus_p2 / (distance + FLT_EPSILON);                    // eq.17
@@ -345,7 +372,7 @@ void display(void){
   sprintf_s(debug, "ITERATION %d", g_Application.m_IterationNum);
   std::string iteration_text(debug);
   render_string(iteration_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 20);
-  sprintf_s(debug, "%s", MODE_STRING[g_Application.m_Mode]);
+  sprintf_s(debug, "%s", modeString[g_Application.m_Mode]);
   std::string mode_text(debug);
   render_string(mode_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 40);
   sprintf_s(debug, "SOLVE TIME %d(ms)", g_Application.GetSolveTime());
