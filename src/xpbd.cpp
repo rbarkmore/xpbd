@@ -21,12 +21,9 @@
 
 enum eMode {
   eModePBD,
-  eModeXPBD_GrapheneHi,
-  eModeXPBD_GrapheneMid,
-  eModeXPBD_SteelCarbon,
-  eModeXPBD_SteelStainless,
+  eModeXPBD_Graphene,
+  eModeXPBD_Steel,
   eModeXPBD_Kevlar,
-  eModeXPBD_TitaniumAlloy,
   eModeXPBD_Aluminum,
   eModeXPBD_Concrete,
   eModeXPBD_Wood,
@@ -40,12 +37,9 @@ enum eMode {
 
 static const char* modeString[eModeMax] = {
   "PBD",
-  "XPBD(GrapheneHi)",
-  "XPBD(GrapheneMid)",
-  "XPBD(SteelCarbon)",
-  "XPBD(SteelStainless)",
+  "XPBD(Graphene)",
+  "XPBD(Steel)",
   "XPBD(Kevlar)",
-  "XPBD(TitaniumAlloy)",
   "XPBD(Aluminum)",
   "XPBD(Concrete)",
   "XPBD(Wood)",
@@ -64,12 +58,9 @@ static const char* modeString[eModeMax] = {
 
 static const float modeCompliance[eModeMax] = {
   0.0f,                         //  space saved for PBD
-  (float) (1.0f / 1.10E+012 ),  //	Graphene Hi
-  (float) (1.0f / 3.42E+011 ),  //	GrapheneMid
-  (float) (1.0f / 2.00E+011 ),  //	SteelCarbon
-  (float) (1.0f / 1.80E+011 ),  //	SteelStainless
+  (float) (1.0f / 1.10E+012 ),  //	Graphene
+  (float) (1.0f / 2.00E+011 ),  //	Steel
   (float) (1.0f / 1.12E+011 ),  //	Kevlar
-  (float) (1.0f / 1.10E+011 ),  //	TitaniumAlloy
   (float) (1.0f / 7.00E+010 ),  //	Aluminum
   (float) (1.0f / 2.50E+010 ),  //	Concrete
   (float) (1.0f / 6.00E+009 ),  //	Wood
@@ -425,7 +416,7 @@ void idle(void){
 
 	float dtSim = g_Application.GetdtPerSimStep();
 
-    if(etSim > g_Application.GetmsPerSimStep()){
+    if(etSim >= g_Application.GetmsPerSimStep()){
 		#ifdef LOG_TO_FILE
 		outf << "etSim: " << etSim << std::endl;
 		#endif // LOG_TO_FILE
@@ -434,7 +425,7 @@ void idle(void){
         g_Cloth.Update(g_Application, dtSim, &g_Ball, g_Application.m_IterationNum);
 	}
 
-	if(etIdle > g_Application.GetmsPerFrame() ){
+	if(etIdle >= g_Application.GetmsPerFrame() ){
 		#ifdef LOG_TO_FILE
 		outf << "                   etIdle: " << etIdle << std::endl;
 		#endif // LOG_TO_FILE
