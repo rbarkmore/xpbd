@@ -19,6 +19,8 @@
 #include <string>
 #include "glm/glm.hpp"
 
+#include <sstream>
+
 enum eMode {
   eModePBD,
   eModeXPBD_Graphene,
@@ -179,6 +181,7 @@ public:
     m_Particle1->AddPosition(+inv_mass1 * correction_vector);
     m_Particle2->AddPosition(-inv_mass2 * correction_vector);
   }
+  float GetStiffness() { return m_Stiffness; }
 };
 
 class CBall{
@@ -284,7 +287,9 @@ public:
   }
 
   void Update(CApplication& app, float dt, CBall* ball, int iteration){
-    std::vector<CParticle>::iterator particle;
+    int before = glutGet(GLUT_ELAPSED_TIME);
+	std::vector<CParticle>::iterator particle;
+
     for(particle = m_Particles.begin(); particle != m_Particles.end(); particle++){
       (*particle).Update(dt); // predict position
     }
@@ -292,7 +297,6 @@ public:
     for(constraint = m_Constraints.begin(); constraint != m_Constraints.end(); constraint++){
       (*constraint).LambdaInit();
     }
-    int  solve_time_ms = 0;
     for(int i = 0; i < iteration; i++){
       for(particle = m_Particles.begin(); particle != m_Particles.end(); particle++){
         glm::vec3 vec    = (*particle).GetPosition() - ball->GetPosition();
@@ -302,13 +306,11 @@ public:
           (*particle).AddPosition(glm::normalize(vec) * (radius - length));
         }
       }
-      int before = glutGet(GLUT_ELAPSED_TIME);
       for(constraint = m_Constraints.begin(); constraint != m_Constraints.end(); constraint++){
         (*constraint).Solve(app, dt);
       }
-      solve_time_ms += glutGet(GLUT_ELAPSED_TIME) - before;
     }
-    app.SetSolveTime(solve_time_ms);
+    app.SetSolveTime(glutGet(GLUT_ELAPSED_TIME) - before);
   }
 };
 
@@ -358,17 +360,19 @@ void display(void){
     g_Ball.Render();
   glPopMatrix();
 
-  glColor3d(1.0f, 1.0f, 1.0f);
-  char debug[128];
-  sprintf_s(debug, "ITERATION %d", g_Application.m_IterationNum);
-  std::string iteration_text(debug);
-  render_string(iteration_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 20);
-  sprintf_s(debug, "%s", modeString[g_Application.m_Mode]);
-  std::string mode_text(debug);
-  render_string(mode_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 40);
-  sprintf_s(debug, "SOLVE TIME %d(ms)", g_Application.GetSolveTime());
-  std::string time_text(debug);
-  render_string(time_text, glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 60);
+  glColor3d(0.2f, 1.0f, 0.2f);
+  std::stringstream caption;
+  caption << modeString[g_Application.m_Mode];
+  render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 20);
+  caption = std::stringstream();
+  caption << "Iteration " << g_Application.m_IterationNum;
+  render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 40);
+  caption = std::stringstream();
+  caption << "dtSim: " << g_Application.GetdtPerSimStep();
+  render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 60);
+  caption = std::stringstream();
+  caption << "Solve Time " << g_Application.GetSolveTime() << " (ms)";
+  render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 80);
 
   glutSwapBuffers();
 };
