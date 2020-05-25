@@ -17,7 +17,7 @@ bool pause = true;
 int main(int argc, char* argv[]) {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-  glutInitWindowSize(640, 480);
+  glutInitWindowSize(800, 480);
   glutCreateWindow("XPBD: Position-Based Simulation of Compliant Constrained Dynamics");
 
   init(argc, argv);
@@ -53,7 +53,7 @@ void render_string(std::string& str, int w, int h, int x0, int y0) {
 }
 
 void init(int argc, char* argv[]){
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glEnable(GL_CULL_FACE);
 }
 
@@ -122,14 +122,6 @@ void reshape(int width, int height){
   glLightfv(GL_LIGHT0, GL_AMBIENT,  lightAmbient);
   glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
 };
-
-// uncomment this define, if you want to log sim time and idle time to file
-//#define LOG_TO_FILE
-#ifdef LOG_TO_FILE
-#include <iostream>
-#include <fstream>
-std::ofstream outf ( "log.txt" );
-#endif // LOG_TO_FILE
 
 void idle(void){
 	int timeNow = glutGet(GLUT_ELAPSED_TIME);  // returns time since program started, in milliseconds
