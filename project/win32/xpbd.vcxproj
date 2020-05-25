@@ -11,7 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\xpbd.cpp" />
+    <ClCompile Include="..\..\src\main_xpbd.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\main_xpbd.h" />
+    <ClInclude Include="..\..\src\xpbd.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0D9C0BD1-4525-4A27-98D2-BDE38A81FA52}</ProjectGuid>
