@@ -12,15 +12,40 @@ CApplication g_Application;
 CCloth       g_Cloth(2.0f, 2.0f, 20, 20);
 CBall        g_Ball(0.1f);
 
+#define WIDTH 640
+#define HEIGHT 480
 bool pause = true;
+// If you don't want to include the code to capture the screen to an MP4 file,
+// undefine the following
+//#define CAPTURE_TO_MP4
+
+#ifdef CAPTURE_TO_MP4
+#include <stdio.h>
+// Miles Macklin tells how to capture simulation video using ffmpeg:
+// http://blog.mmacklin.com/2013/06/11/real-time-video-capture-with-ffmpeg/
+// start ffmpeg telling it to expect raw rgba 720p-60hz frames
+// -i - tells it to read frames from stdin
+// the following will open a command prompt window on top of the desired simulation
+// window.  Click on the simulation window to bring it to the top.  If you close the
+// command prompt window, you will also close the call to ffmpeg, preventing capturing
+// a video to the file, output.mp4
+const char* cmd = "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 640x480 -i - "
+                  "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4";
+//int mp4_width = WIDTH;
+//int mp4_height = HEIGHT;
+FILE* ffmpeg = NULL;
+int* buffer = NULL;
+bool capture = true;
+
+#endif // CAPTURE_TO_MP4
 
 int main(int argc, char* argv[]) {
+  init(argc, argv);
+
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-  glutInitWindowSize(800, 480);
+  glutInitWindowSize(WIDTH, HEIGHT);
   glutCreateWindow("XPBD: Position-Based Simulation of Compliant Constrained Dynamics");
-
-  init(argc, argv);
 
   glutDisplayFunc(display);
   glutReshapeFunc(reshape);
@@ -29,6 +54,11 @@ int main(int argc, char* argv[]) {
   glutSpecialFunc(special);
 
   glutMainLoop();
+
+#ifdef CAPTURE_TO_MP4
+_pclose(ffmpeg);
+#endif // CAPTURE_TO_MP4
+
   return 0;
 }
 
@@ -55,6 +85,13 @@ void render_string(std::string& str, int w, int h, int x0, int y0) {
 void init(int argc, char* argv[]){
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glEnable(GL_CULL_FACE);
+
+#ifdef CAPTURE_TO_MP4
+// open pipe to ffmpeg's stdin in binary write mode
+  ffmpeg = _popen(cmd, "wb");
+  buffer = new int[WIDTH*HEIGHT];
+#endif // CAPTURE_TO_MP4
+
 }
 
 void display(void){
@@ -92,8 +129,24 @@ void display(void){
 	  caption << "Paused";
 	  render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 100);
   }
+#ifdef CAPTURE_TO_MP4
+  if(true == capture){
+	  caption = std::stringstream();
+	  caption << "Record MP4";
+	  render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 120);
+  }
+#endif // CAPTURE_TO_MP4
 
   glutSwapBuffers();
+
+#ifdef CAPTURE_TO_MP4
+   if(false == pause) {
+     if(true == capture) {
+       glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+       fwrite(buffer, sizeof(int)*WIDTH*HEIGHT, 1, ffmpeg);
+     }
+   }
+#endif // CAPTURE_TO_MP4
 };
 
 void reshape(int width, int height){
@@ -101,6 +154,12 @@ void reshape(int width, int height){
   static GLfloat lightDiffuse[3]  = {1.0f,  1.0f,  1.0f      };
   static GLfloat lightAmbient[3]  = {0.25f, 0.25f, 0.25f     };
   static GLfloat lightSpecular[3] = {1.0f,  1.0f,  1.0f      };
+
+#ifdef CAPTURE_TO_MP4
+// do not allow reshape to change window size, if we are outputting an MP4
+width = WIDTH;
+height = HEIGHT;
+#endif // CAPTURE_TO_MP4
 
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
@@ -150,6 +209,15 @@ void keyboard(unsigned char key , int x , int y){
 	case 27:   // esc
 		exit(0);
 		break;
+#ifdef CAPTURE_TO_MP4
+	case 'C': case 'c':
+        if(true == capture){
+			capture = false;
+		} else {
+			capture = true;
+		}
+		break;
+#endif // CAPTURE_TO_MP4
 	case 'P': case 'p':
         if(true == pause){
 			pause = false;
