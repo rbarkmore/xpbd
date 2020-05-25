@@ -12,6 +12,8 @@ CApplication g_Application;
 CCloth       g_Cloth(2.0f, 2.0f, 20, 20);
 CBall        g_Ball(0.1f);
 
+bool pause = true;
+
 int main(int argc, char* argv[]) {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
@@ -85,6 +87,11 @@ void display(void){
   caption = std::stringstream();
   caption << "Solve Time " << g_Application.GetSolveTime() << " (ms)";
   render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 80);
+  if(true == pause){
+	  caption = std::stringstream();
+	  caption << "Paused";
+	  render_string(caption.str(), glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), 10, 100);
+  }
 
   glutSwapBuffers();
 };
@@ -133,27 +140,46 @@ void idle(void){
 	float dtSim = g_Application.GetdtPerSimStep();
 
     if(etSim >= g_Application.GetmsPerSimStep()){
-		#ifdef LOG_TO_FILE
-		outf << "etSim: " << etSim << std::endl;
-		#endif // LOG_TO_FILE
 		g_Application.SetTimeOldSim(timeNow);
-		g_Ball.Update(dtSim);
-        g_Cloth.Update(g_Application, dtSim, &g_Ball, g_Application.m_IterationNum);
+		if(false == pause){
+			g_Ball.Update(dtSim);
+			g_Cloth.Update(g_Application, dtSim, &g_Ball, g_Application.m_IterationNum);
+		}
 	}
 
 	if(etIdle >= g_Application.GetmsPerFrame() ){
-		#ifdef LOG_TO_FILE
-		outf << "                   etIdle: " << etIdle << std::endl;
-		#endif // LOG_TO_FILE
 		g_Application.SetTimeOldIdle(timeNow);
         glutPostRedisplay();
 	}
 }
 
 void keyboard(unsigned char key , int x , int y){
-  switch(key){
-  case 27: exit(0); break; // esc
-  }
+	switch(key){
+	case 27:   // esc
+		exit(0);
+		break;
+	case 'P': case 'p':
+        if(true == pause){
+			pause = false;
+		} else {
+			pause = true;
+		}
+		break;
+	case '+': {
+		int step;
+		step = g_Application.GetmsPerSimStep()  + 1;
+		if(step > 1000) step = 1000;
+		g_Application.SetmsPerSimStep(step);
+		break;
+		}
+	case '-': {
+		int step;
+		step = g_Application.GetmsPerSimStep()  - 1;
+		if(step < 1) step = 1;
+		g_Application.SetmsPerSimStep(step);
+		break;
+		}
+	}
 }
 
 void special(int key, int x, int y){

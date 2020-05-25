@@ -119,6 +119,7 @@ public:
 
    int   GetmsPerFrame() { return m_msPerFrame; }
    int   GetmsPerSimStep() { return m_msSimStep; }
+   void  SetmsPerSimStep(int msStep) {m_msSimStep = msStep; }
    float GetdtPerSimStep() { return ( (float) m_msSimStep ) / 1000.0f; }
    
   int   GetSolveTime(){ return m_SolveTime; }
